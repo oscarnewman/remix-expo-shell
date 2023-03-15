@@ -1,10 +1,41 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { StatusBar } from "expo-status-bar";
+import React, { RefObject, useEffect } from "react";
+import { BackHandler, StyleSheet, View } from "react-native";
+import { WebView } from "react-native-webview";
+import { SafeAreaView } from "react-native-safe-area-context";
+
+export function useHandleBack(webRef: RefObject<WebView>) {
+  useEffect(() => {
+    const handleHardwareBackPress = () =>
+      (webRef.current?.goBack() ?? true) || undefined;
+
+    const subscription = BackHandler.addEventListener(
+      "hardwareBackPress",
+      handleHardwareBackPress
+    );
+    return () => subscription.remove();
+  }, [webRef]);
+}
 
 export default function App() {
+  const webRef = React.useRef<WebView>(null);
+
+  useHandleBack(webRef);
   return (
     <View style={styles.container}>
-      <Text>Open up App.tsx to start working on your app!</Text>
+      <SafeAreaView edges={["top"]} />
+      <WebView
+        style={styles.webView}
+        source={{ uri: "https://withered-bush-4692.fly.dev/timeline" }}
+        decelerationRate="normal"
+        allowsBackForwardNavigationGestures
+        automaticallyAdjustsScrollIndicatorInsets
+        androidLayerType="hardware"
+        ref={webRef}
+        onRenderProcessGone={() => webRef.current?.reload()}
+        onContentProcessDidTerminate={() => webRef.current?.reload()}
+      />
+
       <StatusBar style="auto" />
     </View>
   );
@@ -13,8 +44,9 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
+  },
+  webView: {
+    width: "100%",
+    height: "100%",
   },
 });
